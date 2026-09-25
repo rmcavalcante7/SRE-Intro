@@ -4,7 +4,7 @@
 # AnalysisTemplate queries Prometheus from *inside* the cluster, so Prometheus
 # must live there too.
 #
-# Apply with:  kubectl apply -f labs/lab7/prometheus.yaml
+# Apply with:  kubectl apply -f labs/lab7/prometheus.yml
 # Verify:      kubectl get pods -n monitoring
 # Query UI:    kubectl port-forward -n monitoring svc/prometheus 9091:9090
 apiVersion: v1

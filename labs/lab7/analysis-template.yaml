@@ -1,6 +1,6 @@
 # Argo Rollouts AnalysisTemplate for gateway canary error-rate.
 #
-# This template queries in-cluster Prometheus (labs/lab7/prometheus.yaml) during
+# This template queries in-cluster Prometheus (labs/lab7/prometheus.yml) during
 # a canary rollout. If the canary's 5xx-error ratio exceeds 5% in 3 consecutive
 # 20s windows, the rollout is aborted automatically.
 #

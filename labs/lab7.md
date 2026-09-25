@@ -287,7 +287,7 @@ Clean up: `kubectl delete -f labs/lab7/loadgen.yaml`.
 ### B.1: Install in-cluster Prometheus
 
 ```bash
-kubectl apply -f labs/lab7/prometheus.yaml
+kubectl apply -f labs/lab7/prometheus.yml
 kubectl -n monitoring rollout status deployment/prometheus --timeout=60s
 ```
 
