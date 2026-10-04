@@ -1,71 +1,33 @@
 # This file defines the QuickTicket Gateway service in Kubernetes.
 # It contains two resources:
-# 1. A Rollout, which keeps the Gateway application Pods running and controls canary releases.
+# 1. A Deployment, which keeps the Gateway application Pod running.
 # 2. A Service, which gives the Gateway API a stable address.
 
-# Argo Rollouts resources use the argoproj.io/v1alpha1 API.
-# The Rollout CRD was installed in the argo-rollouts namespace during Lab 7.
-apiVersion: argoproj.io/v1alpha1
+# Deployments use the apps/v1 API.
+apiVersion: apps/v1
 
-# A Rollout is managed by the Argo Rollouts controller.
-# It behaves like a Deployment for steady-state Pods, but adds progressive
-# delivery controls such as canary weights, pauses, promotion, and abort.
-kind: Rollout
+# A Deployment manages Pods and recreates them if they are deleted or fail.
+kind: Deployment
 
 metadata:
-  # The Rollout name is "gateway".
-  # Example: kubectl argo rollouts get rollout gateway
+  # The Deployment name is "gateway".
+  # Example: kubectl get deployment gateway
   name: gateway
 
 spec:
-  # Five Gateway replicas are required for meaningful canary splits in this lab.
-  # With 5 replicas, 20% means 1 canary Pod and 4 stable Pods.
-  replicas: 5
+  # One Gateway replica is enough for this lab.
+  replicas: 1
 
-  # strategy defines how Argo Rollouts releases a new Gateway version.
-  # The bonus strategy adds an automated analysis step after the first canary
-  # exposure. Argo Rollouts passes the latest canary pod-template hash into the
-  # AnalysisTemplate so Prometheus measures only the canary pods.
-  strategy:
-    canary:
-      steps:
-        # Send roughly 20% of traffic to the new version.
-        # With 5 replicas, this corresponds to 1 canary Pod.
-        - setWeight: 20
-
-        # Keep traffic on the canary long enough for Prometheus to scrape samples.
-        - pause:
-            duration: 20s
-
-        # Run the gateway-error-rate AnalysisTemplate against the latest canary.
-        - analysis:
-            templates:
-              - templateName: gateway-error-rate
-            args:
-              - name: canary-hash
-                valueFrom:
-                  podTemplateHashValue: Latest
-
-        # If the analysis succeeds, increase exposure to roughly 50%.
-        - setWeight: 50
-
-        # Observe the 50% step briefly before full promotion.
-        - pause:
-            duration: 20s
-
-        # Complete the rollout by moving all Gateway traffic to the new version.
-        - setWeight: 100
-
-  # selector tells the Rollout which Pods it owns.
+  # selector tells the Deployment which Pods it owns.
   selector:
     matchLabels:
       app: gateway
 
-  # template defines the Pods created by the Gateway Rollout.
+  # template defines the Pod created by the Gateway Deployment.
   template:
     metadata:
       labels:
-        # This label links the Pod to the Rollout selector and the Service selector.
+        # This label links the Pod to the Deployment selector and the Service selector.
         app: gateway
         version: "v2"
 
@@ -82,10 +44,10 @@ spec:
           # This image is built by GitHub Actions and pushed to ghcr.io.
           # The tag is the commit SHA from the CI run, which makes the deployed
           # container traceable to the exact source revision.
-          image: ghcr.io/rmcavalcante7/quickticket-gateway:10bf5ac035aa71b9905dc6a2c20df9eae760696a
+          image: ghcr.io/rmcavalcante7/quickticket-gateway:de17feee953bcb45967f17d54952e873b93648ad
 
           # Always makes Kubernetes pull the image from the registry whenever
-          # a new Pod is created, which matches the GHCR workflow.
+          # a new Pod is created, which matches the Lab 5 GHCR workflow.
           imagePullPolicy: Always
 
           # The Gateway FastAPI application listens on port 8080.
@@ -107,8 +69,9 @@ spec:
             failureThreshold: 3
 
           # readinessProbe tells Kubernetes whether this Pod can receive traffic.
-          # It uses /health so only Gateway Pods that can answer health checks
-          # are added to the Service endpoints.
+          # If this check fails, Kubernetes keeps the Pod running but removes it
+          # from the Service endpoints until the check passes again.
+          # This is useful when the process is alive but a dependency is degraded.
           readinessProbe:
             httpGet:
               path: /health
@@ -147,10 +110,6 @@ spec:
             - name: GATEWAY_TIMEOUT_MS
               value: "5000"
 
-            # APP_VERSION identifies this Gateway template revision during the canary lab.
-            # Changing this value forces Argo Rollouts to create a new ReplicaSet.
-            - name: APP_VERSION
-              value: "v5-multistep"
 ---
 
 # This Service gives the Gateway Pods a stable address.
