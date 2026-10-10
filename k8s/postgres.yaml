@@ -72,6 +72,19 @@ spec:
             - name: POSTGRES_PASSWORD
               value: "quickticket"
 
+            # PGDATA tells PostgreSQL to store its database files in a subdirectory
+            # inside the mounted volume. This avoids conflicts with filesystem
+            # directories such as lost+found that can exist at the root of a volume.
+            - name: PGDATA
+              value: "/var/lib/postgresql/data/pgdata"
+
+          # volumeMounts attaches persistent storage to the PostgreSQL container.
+          # Without this mount, a recreated Pod starts with an empty database.
+          volumeMounts:
+            # Mount the postgres-data PVC at the standard PostgreSQL data root.
+            - name: data
+              mountPath: /var/lib/postgresql/data
+
           # resources declares the requested and maximum CPU/memory for PostgreSQL.
           # This keeps the database workload visible in Kubernetes scheduling and
           # node allocation output for the lab.
@@ -83,9 +96,39 @@ spec:
               cpu: 200m
               memory: 256Mi
 
+      # volumes declares storage sources available to containers in this Pod.
+      volumes:
+        # The data volume is backed by the postgres-data PersistentVolumeClaim.
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-data
+
 ---
 
-# This second YAML document defines the Service for PostgreSQL.
+# This second YAML document defines persistent storage for PostgreSQL.
+# A PersistentVolumeClaim asks Kubernetes for durable storage that can be
+# reattached when the Postgres Pod is recreated.
+apiVersion: v1
+
+# PersistentVolumeClaim is the Kubernetes resource used by Pods to request storage.
+kind: PersistentVolumeClaim
+
+metadata:
+  # This name is referenced by the Deployment volume above.
+  name: postgres-data
+
+spec:
+  # ReadWriteOnce means one node can mount the volume for read/write access.
+  accessModes: [ReadWriteOnce]
+
+  resources:
+    requests:
+      # 1Gi is enough for this lab's small QuickTicket database.
+      storage: 1Gi
+
+---
+
+# This third YAML document defines the Service for PostgreSQL.
 # A Service provides a stable virtual IP and DNS name for a set of Pods.
 # This matters because Pods are disposable and their IP addresses can change.
 apiVersion: v1
