@@ -90,7 +90,7 @@ The nullable-column migration completed successfully. It took `2.15s` in this en
 
 ### Prometheus 5xx before and after migration
 
-The 5xx counter over the last minute was effectively unchanged before and after the migration.
+The estimated 5xx increase over the last minute was effectively unchanged before and after the migration.
 
 ```text
 5xx last 1min before successful migration: 3.2726082738383924
@@ -101,7 +101,7 @@ This shows that the migration did not introduce a visible additional 5xx spike i
 
 ### Backup file and pg_restore list
 
-I created a custom-format `pg_dump` backup and verified it with `file` and `pg_restore --list` inside the Postgres pod.
+I created the custom-format `pg_dump` backup on the host as `/tmp/quickticket.dump`, copied it into the Postgres pod as `/tmp/backup.dump`, and verified it with `file` on the host and `pg_restore --list` inside the pod.
 
 ```text
 -rw-rw-r-- 1 lima lima 7.2K Oct 10 08:08 /tmp/quickticket.dump
@@ -278,7 +278,7 @@ RPO_SECONDS=595
 
 Actual RTO was `56s`, measured from `08:18:20` when the Postgres pod was deleted to `08:19:16` when the `events` deployment was rolled out and ready again.
 
-Actual RPO as a time window was `595s`, because the backup used for restore was created at `08:08:25` and the disaster happened at `08:18:20`. The observed row gap was `0` orders in this run, because the database had `50` orders before the disaster and `50` orders after restore.
+Actual RPO as a time window was `595s`, because the backup used for restore was created at `08:08:25` and the disaster happened at `08:18:20`. Although the backup was 595 seconds old, no additional successful orders were written in that interval, so the observed row-loss gap was `0` orders: the database had `50` orders before the disaster and `50` orders after restore.
 
 ### Prometheus error rate around the incident
 
@@ -304,65 +304,37 @@ I added persistent storage to Postgres by mounting a `postgres-data` PersistentV
 
 ```diff
 diff --git a/k8s/postgres.yaml b/k8s/postgres.yaml
-index 232cbf3..82fd475 100644
---- a/k8s/postgres.yaml
-+++ b/k8s/postgres.yaml
-@@ -72,6 +72,19 @@ spec:
+@@
+           env:
+             - name: POSTGRES_DB
+               value: "quickticket"
+             - name: POSTGRES_USER
+               value: "quickticket"
              - name: POSTGRES_PASSWORD
                value: "quickticket"
- 
-+            # PGDATA tells PostgreSQL to store its database files in a subdirectory
-+            # inside the mounted volume. This avoids conflicts with filesystem
-+            # directories such as lost+found that can exist at the root of a volume.
++            # Store data in a subdirectory to avoid conflicts with volume roots such as lost+found.
 +            - name: PGDATA
 +              value: "/var/lib/postgresql/data/pgdata"
-+
-+          # volumeMounts attaches persistent storage to the PostgreSQL container.
-+          # Without this mount, a recreated Pod starts with an empty database.
 +          volumeMounts:
-+            # Mount the postgres-data PVC at the standard PostgreSQL data root.
 +            - name: data
 +              mountPath: /var/lib/postgresql/data
-+
-           # resources declares the requested and maximum CPU/memory for PostgreSQL.
-@@ -83,9 +96,39 @@ spec:
-               cpu: 200m
-               memory: 256Mi
- 
-+      # volumes declares storage sources available to containers in this Pod.
+           resources:
+@@
 +      volumes:
-+        # The data volume is backed by the postgres-data PersistentVolumeClaim.
 +        - name: data
 +          persistentVolumeClaim:
 +            claimName: postgres-data
 +
 +---
-+
-+# This second YAML document defines persistent storage for PostgreSQL.
-+# A PersistentVolumeClaim asks Kubernetes for durable storage that can be
-+# reattached when the Postgres Pod is recreated.
 +apiVersion: v1
-+
-+# PersistentVolumeClaim is the Kubernetes resource used by Pods to request storage.
 +kind: PersistentVolumeClaim
-+
 +metadata:
-+  # This name is referenced by the Deployment volume above.
 +  name: postgres-data
-+
 +spec:
-+  # ReadWriteOnce means one node can mount the volume for read/write access.
 +  accessModes: [ReadWriteOnce]
-+
 +  resources:
 +    requests:
-+      # 1Gi is enough for this lab's small QuickTicket database.
 +      storage: 1Gi
-+
- ---
- 
--# This second YAML document defines the Service for PostgreSQL.
-+# This third YAML document defines the Service for PostgreSQL.
 ```
 
 After applying the manifest, Kubernetes created and bound the PVC.
@@ -457,24 +429,16 @@ With PVC, SQL was ready after `7s` and the application check returned `/events=2
 The backup CronJob runs every 5 minutes, forbids overlapping jobs, writes custom-format dumps to `/backups`, and keeps only the five newest dumps.
 
 ```yaml
-# This CronJob creates periodic PostgreSQL backups for QuickTicket.
-# It writes custom-format pg_dump files to the postgres-backups PVC and keeps
-# only the five newest dumps so backup storage does not grow without bound.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
 spec:
-  # Run every five minutes, as required by Lab 9.
   schedule: "*/5 * * * *"
-
-  # Do not start a new backup if the previous backup job is still running.
+  # Avoid overlapping dumps if a backup runs longer than expected.
   concurrencyPolicy: Forbid
-
-  # Keep a small amount of Job history so Kubernetes metadata does not grow forever.
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
-
   jobTemplate:
     spec:
       template:

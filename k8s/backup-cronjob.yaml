@@ -1,21 +1,13 @@
-# This CronJob creates periodic PostgreSQL backups for QuickTicket.
-# It writes custom-format pg_dump files to the postgres-backups PVC and keeps
-# only the five newest dumps so backup storage does not grow without bound.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
 spec:
-  # Run every five minutes, as required by Lab 9.
   schedule: "*/5 * * * *"
-
-  # Do not start a new backup if the previous backup job is still running.
+  # Avoid overlapping dumps if a backup runs longer than expected.
   concurrencyPolicy: Forbid
-
-  # Keep a small amount of Job history so Kubernetes metadata does not grow forever.
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
-
   jobTemplate:
     spec:
       template:
