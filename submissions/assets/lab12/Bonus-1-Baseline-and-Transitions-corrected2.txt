@@ -1,0 +1,101 @@
+=== CORRECTED BONUS BASELINE UTC ===
+2026-10-18 10:31:13 UTC
+=== MIXEDLOAD ===
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES                   SELECTOR
+mixedload   2/2     2            2           3d12h   curl         curlimages/curl:latest   app=mixedload
+=== SCHEMA BEFORE MIGRATION 1 ===
+                                        Table "public.events"
+    Column     |           Type           | Collation | Nullable |              Default               
+---------------+--------------------------+-----------+----------+------------------------------------
+ id            | integer                  |           | not null | nextval('events_id_seq'::regclass)
+ name          | text                     |           | not null | 
+ venue         | text                     |           | not null | 
+ total_tickets | integer                  |           | not null | 
+ price_cents   | integer                  |           | not null | 
+ email         | character varying(255)   |           |          | 
+ event_date    | timestamp with time zone |           | not null | 
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "orders" CONSTRAINT "orders_event_id_fkey" FOREIGN KEY (event_id) REFERENCES events(id)
+
+=== 5XX_COUNTER_BASELINE ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319472.875,"1368"]}]}}
+BASELINE_VALUE=1368
+
+=== MIGRATION 1 UTC ===
+2026-10-18 10:31:40 UTC
+=== 5XX_COUNTER_AFTER_MIGRATION_1 ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319499.310,"1368"]}]}}
+VALUE=1368
+=== SCHEMA_AFTER_MIGRATION_1 ===
+                                        Table "public.events"
+    Column     |           Type           | Collation | Nullable |              Default               
+---------------+--------------------------+-----------+----------+------------------------------------
+ id            | integer                  |           | not null | nextval('events_id_seq'::regclass)
+ name          | text                     |           | not null | 
+ venue         | text                     |           | not null | 
+ total_tickets | integer                  |           | not null | 
+ price_cents   | integer                  |           | not null | 
+ email         | character varying(255)   |           |          | 
+ event_date    | timestamp with time zone |           | not null | 
+ scheduled_at  | timestamp with time zone |           |          | 
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+    "idx_events_event_date" btree (event_date)
+Referenced by:
+    TABLE "orders" CONSTRAINT "orders_event_id_fkey" FOREIGN KEY (event_id) REFERENCES events(id)
+
+
+=== DEPLOY A UTC ===
+2026-10-18 10:32:40 UTC
+Waiting for deployment "events" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "events" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "events" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "events" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "events" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "events" rollout to finish: 1 old replicas are pending termination...
+deployment "events" successfully rolled out
+IMAGE=quickticket-events:a
+READ_MODE=COALESCE(scheduled_at,event_date)
+=== 5XX_COUNTER_AFTER_DEPLOY_A ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319560.233,"1372"]}]}}
+VALUE=1372
+
+=== DEPLOY A UTC ===
+2026-10-18 10:32:54 UTC
+IMAGE=quickticket-events:a
+READ_MODE=COALESCE(scheduled_at,event_date)
+=== 5XX_COUNTER_AFTER_DEPLOY_A ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319573.961,"1372"]}]}}
+VALUE=1372
+
+=== MIGRATION 2 UTC ===
+2026-10-18 10:33:21 UTC
+=== 5XX_COUNTER_AFTER_MIGRATION_2 ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319600.177,"1372"]}]}}
+VALUE=1372
+ROW_PARITY=5/5
+
+=== DEPLOY B UTC ===
+2026-10-18 10:34:19 UTC
+Waiting for deployment "events" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "events" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "events" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "events" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "events" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "events" rollout to finish: 1 old replicas are pending termination...
+deployment "events" successfully rolled out
+IMAGE=quickticket-events:v2
+READ_MODE=scheduled_at
+=== 5XX_COUNTER_AFTER_DEPLOY_B ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319659.752,"1374"]}]}}
+VALUE=1374
+
+=== DEPLOY B UTC ===
+2026-10-18 10:34:29 UTC
+IMAGE=quickticket-events:v2
+READ_MODE=scheduled_at
+=== 5XX_COUNTER_AFTER_DEPLOY_B ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319669.382,"1374"]}]}}
+VALUE=1374

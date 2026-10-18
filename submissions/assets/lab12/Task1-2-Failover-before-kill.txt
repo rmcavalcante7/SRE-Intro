@@ -1,0 +1,10 @@
+=== UTC BEFORE ===
+2026-10-14 21:58:43 UTC
+=== OFFICIAL GLOBAL 5XX BEFORE ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792015125.341,"11.313897813046403"]}]}}
+=== NON-HEALTH 5XX BEFORE ===
+{"status":"success","data":{"resultType":"vector","result":[]}}
+=== PODS TO DELETE ===
+gateway=gateway-9c86f668d-74gcx events=events-69d564d998-8svth
+pod "gateway-9c86f668d-74gcx" deleted from default namespace
+pod "events-69d564d998-8svth" deleted from default namespace

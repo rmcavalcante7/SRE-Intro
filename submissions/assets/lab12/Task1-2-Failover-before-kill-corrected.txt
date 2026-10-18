@@ -1,0 +1,4 @@
+=== UTC BASELINE === 2026-10-15 12:42:58 UTC
+gateway=gateway-698cf6b6c8-d5ws9 events=events-85d957cfc-sxktc
+=== GLOBAL_5XX_BEFORE_3M ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068179.334,"0"]}]}}

@@ -1,0 +1,13 @@
+=== INVALID CAPTURE — DO NOT USE AS BONUS PROOF ===
+The terminal session ended before the five-transition sequence completed. The
+values below are retained as an audit trail and are not used in the report.
+=== BONUS RERUN UTC START === 2026-10-15 12:51:57 UTC
+=== 5XX_BASELINE_COUNTER ===
+306
+baseline=310
+=== AFTER_MIGRATION_1_COUNTER ===
+326
+=== AFTER_DEPLOY_A_V1_COUNTER ===
+326
+=== AFTER_MIGRATION_2_COUNTER ===
+116

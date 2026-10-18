@@ -1,0 +1,3 @@
+2026-10-14 22:16:47 UTC
+QUERY=global_5xx_1m_after_migration
+{"status":"success","data":{"resultType":"vector","result":[]}}

@@ -1,0 +1,1 @@
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{"target":"payments"},"value":[1792012343.867,"10"]}]}}

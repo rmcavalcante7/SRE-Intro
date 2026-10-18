@@ -1,0 +1,122 @@
+2026-10-14 22:26:28 UTC
+SCHEMA_BEFORE_MIGRATION_1
+  column_name  |        data_type         | is_nullable 
+---------------+--------------------------+-------------
+ id            | integer                  | NO
+ name          | text                     | NO
+ venue         | text                     | NO
+ event_date    | timestamp with time zone | NO
+ total_tickets | integer                  | NO
+ price_cents   | integer                  | NO
+ email         | character varying        | YES
+(7 rows)
+
+5XX_BASELINE_3M
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792016794.241,"113.53562697750253"]}]}}2026-10-14 22:26:45 UTC
+SCHEMA_AFTER_MIGRATION_1
+  column_name  |        data_type         | is_nullable 
+---------------+--------------------------+-------------
+ id            | integer                  | NO
+ name          | text                     | NO
+ venue         | text                     | NO
+ event_date    | timestamp with time zone | NO
+ total_tickets | integer                  | NO
+ price_cents   | integer                  | NO
+ email         | character varying        | YES
+ scheduled_at  | timestamp with time zone | YES
+(8 rows)
+
+COLUMN_COEXISTENCE
+ rows | event_date_nonnull | scheduled_at_nonnull 
+------+--------------------+----------------------
+    5 |                  5 |                    0
+(1 row)
+
+5XX_AFTER_MIGRATION_1_3M
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792016815.278,"90.9306354075419"]}]}}2026-10-14 22:38:01 UTC
+DEPLOY_A_IMAGE
+quickticket-events:v1 IfNotPresent
+DEPLOY_A_PODS
+NAME                      READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+events-7b7b899c4d-gnwzg   1/1     Running   0          53s   10.42.0.127   k3d-quickticket-server-0   <none>           <none>
+events-7b7b899c4d-vtq54   1/1     Running   0          33s   10.42.0.128   k3d-quickticket-server-0   <none>           <none>
+5XX_AFTER_DEPLOY_A_3M
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792017486.174,"2.056990061838168"]}]}}2026-10-14 22:40:42 UTC
+MIGRATION_2_PRE_SCHEMA_AND_5XX
+  column_name  |        data_type         | is_nullable 
+---------------+--------------------------+-------------
+ id            | integer                  | NO
+ name          | text                     | NO
+ venue         | text                     | NO
+ event_date    | timestamp with time zone | NO
+ total_tickets | integer                  | NO
+ price_cents   | integer                  | NO
+ email         | character varying        | YES
+ scheduled_at  | timestamp with time zone | YES
+(8 rows)
+
+ rows | scheduled_at_nonnull 
+------+----------------------
+    5 |                    0
+(1 row)
+
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792017650.002,"2.057231025547159"]}]}}2026-10-14 22:40:59 UTC
+MIGRATION_2_POST_SCHEMA_AND_5XX
+  column_name  |        data_type         | is_nullable 
+---------------+--------------------------+-------------
+ id            | integer                  | NO
+ name          | text                     | NO
+ venue         | text                     | NO
+ event_date    | timestamp with time zone | NO
+ total_tickets | integer                  | NO
+ price_cents   | integer                  | NO
+ email         | character varying        | YES
+ scheduled_at  | timestamp with time zone | NO
+(8 rows)
+
+ rows | scheduled_at_nonnull | equal_values 
+------+----------------------+--------------
+    5 |                    5 |            5
+(1 row)
+
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792017665.021,"0"]}]}}2026-10-14 22:47:12 UTC
+DEPLOY_B_IMAGE_AND_PODS
+quickticket-events:v2 IfNotPresent
+NAME                     READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+events-85d957cfc-26mdd   1/1     Running   0          46s   10.42.0.129   k3d-quickticket-server-0   <none>           <none>
+events-85d957cfc-x42bq   1/1     Running   0          27s   10.42.0.130   k3d-quickticket-server-0   <none>           <none>
+5XX_AFTER_DEPLOY_B_3M
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792018034.531,"0"]}]}}2026-10-14 22:50:51 UTC
+MIGRATION_3_PRE_SCHEMA_AND_5XX
+  column_name  |        data_type         | is_nullable 
+---------------+--------------------------+-------------
+ id            | integer                  | NO
+ name          | text                     | NO
+ venue         | text                     | NO
+ event_date    | timestamp with time zone | NO
+ total_tickets | integer                  | NO
+ price_cents   | integer                  | NO
+ email         | character varying        | YES
+ scheduled_at  | timestamp with time zone | NO
+(8 rows)
+
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792018254.690,"0"]}]}}2026-10-14 22:51:08 UTC
+MIGRATION_3_FINAL_SCHEMA
+  column_name  |        data_type         | is_nullable 
+---------------+--------------------------+-------------
+ id            | integer                  | NO
+ name          | text                     | NO
+ venue         | text                     | NO
+ total_tickets | integer                  | NO
+ price_cents   | integer                  | NO
+ email         | character varying        | YES
+ scheduled_at  | timestamp with time zone | NO
+(7 rows)
+
+ rows | scheduled_at_nonnull 
+------+----------------------
+    5 |                    5
+(1 row)
+
+5XX_FINAL_3M
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792018274.041,"0"]}]}}

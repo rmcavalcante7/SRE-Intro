@@ -1,0 +1,84 @@
+=== UTC === 2026-10-16 07:35:07 UTC
+=== DEPLOYMENTS ===
+NAME            READY   UP-TO-DATE   AVAILABLE   AGE
+events          2/2     2            2           20d
+payments        2/2     2            2           20d
+notifications   2/2     2            2           35h
+=== GATEWAY ROLLOUT ===
+Name:            gateway
+Namespace:       default
+Status:          ✔ Healthy
+Strategy:        Canary
+  Step:          6/6
+  SetWeight:     100
+  ActualWeight:  100
+Images:          ghcr.io/rmcavalcante7/quickticket-gateway:1e3fd11d3955a10073fe3e385b6622172e51c5e5 (stable)
+Replicas:
+  Desired:       5
+  Current:       5
+  Updated:       5
+  Ready:         5
+  Available:     5
+
+NAME                                 KIND         STATUS        AGE  INFO
+⟳ gateway                            Rollout      ✔ Healthy     11d  
+├──# revision:36                                                     
+│  ├──⧉ gateway-698cf6b6c8           ReplicaSet   ✔ Healthy     33h  stable
+│  │  ├──□ gateway-698cf6b6c8-bgx74  Pod          ✔ Running     18h  ready:1/1
+│  │  ├──□ gateway-698cf6b6c8-2pbv7  Pod          ✔ Running     18h  ready:1/1
+│  │  ├──□ gateway-698cf6b6c8-cwhh5  Pod          ✔ Running     18h  ready:1/1
+│  │  ├──□ gateway-698cf6b6c8-xzgtz  Pod          ✔ Running     18h  ready:1/1
+│  │  └──□ gateway-698cf6b6c8-tqrh9  Pod          ✔ Running     18h  ready:1/1
+│  └──α gateway-698cf6b6c8-36-2      AnalysisRun  ✔ Successful  33h  ✔ 3
+├──# revision:35                                                     
+│  ├──⧉ gateway-9c86f668d            ReplicaSet   • ScaledDown  33h  
+│  └──α gateway-9c86f668d-35-2       AnalysisRun  ✔ Successful  33h  ✔ 3
+├──# revision:34                                                     
+│  ├──⧉ gateway-6c4f79dc95           ReplicaSet   • ScaledDown  33h  
+│  ├──α gateway-6c4f79dc95-34-2      AnalysisRun  ✖ Failed      33h  ✖ 2
+│  └──α gateway-6c4f79dc95-34-2.1    AnalysisRun  ✖ Failed      33h  ✔ 1,✖ 2
+├──# revision:33                                                     
+│  └──⧉ gateway-759cc77b8b           ReplicaSet   • ScaledDown  35h  
+├──# revision:32                                                     
+│  └──⧉ gateway-7b56568c86           ReplicaSet   • ScaledDown  35h  
+├──# revision:31                                                     
+│  └──⧉ gateway-696487c684           ReplicaSet   • ScaledDown  34h  
+├──# revision:30                                                     
+│  └──⧉ gateway-59688d688d           ReplicaSet   • ScaledDown  35h  
+├──# revision:18                                                     
+│  └──⧉ gateway-6677bc9bb5           ReplicaSet   • ScaledDown  35h  
+├──# revision:17                                                     
+│  └──α gateway-759cc77b8b-17-2      AnalysisRun  ✔ Successful  35h  
+├──# revision:15                                                     
+│  └──⧉ gateway-6f676c8dfb           ReplicaSet   • ScaledDown  35h  
+├──# revision:14                                                     
+│  └──⧉ gateway-8547cbd7f6           ReplicaSet   • ScaledDown  35h  
+└──# revision:12                                                     
+   ├──⧉ gateway-74d4cc445f           ReplicaSet   • ScaledDown  11d  
+   └──α gateway-74d4cc445f-12-2      AnalysisRun  ✖ Failed      11d  ✖ 2
+=== PDB ===
+NAME                MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+events-pdb          1               N/A               1                     33h
+gateway-pdb         2               N/A               3                     33h
+notifications-pdb   N/A             1                 1                     33h
+payments-pdb        1               N/A               1                     33h
+=== TOPOLOGY SPEC ===
+[
+    {
+        "labelSelector": {
+            "matchLabels": {
+                "app": "gateway"
+            }
+        },
+        "maxSkew": 1,
+        "topologyKey": "kubernetes.io/hostname",
+        "whenUnsatisfiable": "ScheduleAnyway"
+    }
+]
+=== GATEWAY PLACEMENT ===
+NAME                       READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+gateway-698cf6b6c8-2pbv7   1/1     Running   0          18h   10.42.0.141   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-bgx74   1/1     Running   0          18h   10.42.0.140   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-cwhh5   1/1     Running   0          18h   10.42.0.142   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-tqrh9   1/1     Running   0          18h   10.42.0.144   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-xzgtz   1/1     Running   0          18h   10.42.0.143   k3d-quickticket-server-0   <none>           <none>

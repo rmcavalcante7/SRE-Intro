@@ -1,0 +1,1 @@
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{"instance":"10.42.0.48:8080","job":"gateway","pod":"gateway-59688d688d-tz2c5","rs_hash":"59688d688d","target":"payments"},"value":[1792012342.956,"10"]}]}}

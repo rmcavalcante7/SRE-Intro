@@ -1,0 +1,76 @@
+"""index events.event_date concurrently
+
+Revision ID: c1f4e8a92b7d
+Revises: bf3aa2d35ec3
+Create Date: 2026-10-14
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+
+
+# revision identifiers, used by Alembic.
+revision: str = "c1f4e8a92b7d"
+down_revision: Union[str, Sequence[str], None] = "bf3aa2d35ec3"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    """
+    Create the event-date lookup index without blocking normal traffic.
+
+    The DDL runs in Alembic's autocommit block because PostgreSQL does not
+    permit ``CREATE INDEX CONCURRENTLY`` inside a transaction.  The operation
+    is idempotent so an interrupted deployment can be retried safely.
+
+    :return: None = the index is created or already exists
+    :raises sqlalchemy.exc.SQLAlchemyError: if PostgreSQL rejects the DDL
+
+    :example:
+        >>> import importlib.util
+        >>> path = "migrations/versions/c1f4e8a92b7d_index_events_event_date_concurrently.py"
+        >>> spec = importlib.util.spec_from_file_location("revision", path)
+        >>> revision = importlib.util.module_from_spec(spec)
+        >>> spec.loader.exec_module(revision)
+        >>> callable(revision.upgrade)
+        True
+    """
+    with op.get_context().autocommit_block():
+        op.create_index(
+            "idx_events_event_date",
+            "events",
+            ["event_date"],
+            unique=False,
+            postgresql_concurrently=True,
+            if_not_exists=True,
+        )
+
+
+def downgrade() -> None:
+    """
+    Remove the event-date lookup index using the same safe DDL mode.
+
+    The concurrent drop is also idempotent, allowing a rollback to proceed
+    when the index was already removed by a previous partial attempt.
+
+    :return: None = the index is removed or already absent
+    :raises sqlalchemy.exc.SQLAlchemyError: if PostgreSQL rejects the DDL
+
+    :example:
+        >>> import importlib.util
+        >>> path = "migrations/versions/c1f4e8a92b7d_index_events_event_date_concurrently.py"
+        >>> spec = importlib.util.spec_from_file_location("revision", path)
+        >>> revision = importlib.util.module_from_spec(spec)
+        >>> spec.loader.exec_module(revision)
+        >>> callable(revision.downgrade)
+        True
+    """
+    with op.get_context().autocommit_block():
+        op.drop_index(
+            "idx_events_event_date",
+            table_name="events",
+            postgresql_concurrently=True,
+            if_exists=True,
+        )

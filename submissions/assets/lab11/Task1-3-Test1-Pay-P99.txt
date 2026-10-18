@@ -1,0 +1,2 @@
+{"path":"/reserve/{id}/pay","p99_seconds":0.23889493772382342}
+The clean-window run remained above the official 0.100-second target.

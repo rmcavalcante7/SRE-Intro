@@ -1,0 +1,14 @@
+=== UTC READY === 2026-10-15 12:43:20 UTC
+RECOVERY_SECONDS=22
+NAME                       READY   STATUS    RESTARTS      AGE     IP            NODE                       NOMINATED NODE   READINESS GATES
+events-85d957cfc-6zgmt     1/1     Running   0             21s     10.42.0.139   k3d-quickticket-server-0   <none>           <none>
+events-85d957cfc-x42bq     1/1     Running   0             13h     10.42.0.130   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-98vk9   1/1     Running   0             21s     10.42.0.138   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-dzs2z   1/1     Running   0             4m37s   10.42.0.135   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-gbvsm   1/1     Running   1 (14h ago)   14h     10.42.0.115   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-lj6ns   1/1     Running   0             14h     10.42.0.118   k3d-quickticket-server-0   <none>           <none>
+gateway-698cf6b6c8-plf9j   1/1     Running   0             14h     10.42.0.119   k3d-quickticket-server-0   <none>           <none>
+=== GLOBAL_5XX_AFTER_1M ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068202.602,"0"]}]}}
+=== BY_PATH_STATUS_AFTER_1M ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{"path":"/health","status":"503"},"value":[1792068203.985,"0"]},{"metric":{"path":"/events/{id}/reserve","status":"504"},"value":[1792068203.985,"0"]},{"metric":{"path":"/events","status":"502"},"value":[1792068203.985,"0"]},{"metric":{"path":"/events","status":"504"},"value":[1792068203.985,"0"]},{"metric":{"path":"/events/{id}/reserve","status":"502"},"value":[1792068203.985,"0"]}]}}

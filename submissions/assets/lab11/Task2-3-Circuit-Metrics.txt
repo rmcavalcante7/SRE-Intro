@@ -1,0 +1,5 @@
+{"status":"success","data":{"resultType":"vector","result":[
+  {"metric":{"to":"OPEN"},"value":[1792009782.154,"4"]},
+  {"metric":{"to":"HALF_OPEN"},"value":[1792009782.154,"4"]},
+  {"metric":{"to":"CLOSED"},"value":[1792009782.154,"4"]}
+]}}

@@ -1,0 +1,1 @@
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{"path":"/reserve/{id}/pay"},"value":[1792011156.412,"0.2352027224932444"]},{"metric":{"path":"/events/{id}/reserve"},"value":[1792011156.412,"0.45865749102431724"]},{"metric":{"path":"/health"},"value":[1792011156.412,"0.6936098284873617"]}]}}

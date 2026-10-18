@@ -17,9 +17,8 @@ metadata:
   name: events
 
 spec:
-  # One replica is enough for this lab.
-  # Later, Kubernetes can scale this by increasing the replica count.
-  replicas: 1
+  # Two replicas keep the service available while one Pod is disrupted.
+  replicas: 2
 
   # selector defines which Pods this Deployment owns.
   # It must match the Pod labels in the template below.
@@ -44,14 +43,9 @@ spec:
         # The Events Pod contains one application container.
         - name: events
 
-          # This image is built by GitHub Actions and pushed to ghcr.io.
-          # The tag is the commit SHA from the CI run, which makes the deployed
-          # container traceable to the exact source revision.
-          image: ghcr.io/rmcavalcante7/quickticket-events:1e3fd11d3955a10073fe3e385b6622172e51c5e5
-
-          # Always makes Kubernetes pull the image from the registry whenever
-          # a new Pod is created, which matches the Lab 5 GHCR workflow.
-          imagePullPolicy: Always
+          # Locally imported image used for Lab 12 Deploy B.
+          image: quickticket-events:v2
+          imagePullPolicy: IfNotPresent
 
           # The Events FastAPI application listens on port 8081.
           ports:

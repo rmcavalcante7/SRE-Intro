@@ -15,8 +15,8 @@ metadata:
   name: payments
 
 spec:
-  # One replica is enough for this lab.
-  replicas: 1
+  # Two replicas keep the service available while one Pod is disrupted.
+  replicas: 2
 
   # selector tells the Deployment which Pods it owns.
   selector:

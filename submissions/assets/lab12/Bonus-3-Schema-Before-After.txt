@@ -1,0 +1,13 @@
+SCHEMA_BEFORE_AFTER
+Before Migration 1 and after Migration 3 are recorded in Bonus-1-Baseline-and-Transitions.txt.
+  column_name  | is_nullable 
+---------------+-------------
+ id            | NO
+ name          | NO
+ venue         | NO
+ total_tickets | NO
+ price_cents   | NO
+ email         | YES
+ scheduled_at  | NO
+(7 rows)
+

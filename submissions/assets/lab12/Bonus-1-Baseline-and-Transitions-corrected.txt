@@ -1,0 +1,48 @@
+=== BONUS BASELINE UTC ===
+2026-10-18 10:25:20 UTC
+=== MIXEDLOAD ===
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES                   SELECTOR
+mixedload   2/2     2            2           3d12h   curl         curlimages/curl:latest   app=mixedload
+=== SCHEMA BEFORE MIGRATION 1 ===
+                                        Table "public.events"
+    Column     |           Type           | Collation | Nullable |              Default               
+---------------+--------------------------+-----------+----------+------------------------------------
+ id            | integer                  |           | not null | nextval('events_id_seq'::regclass)
+ name          | text                     |           | not null | 
+ venue         | text                     |           | not null | 
+ total_tickets | integer                  |           | not null | 
+ price_cents   | integer                  |           | not null | 
+ email         | character varying(255)   |           |          | 
+ event_date    | timestamp with time zone |           | not null | 
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "orders" CONSTRAINT "orders_event_id_fkey" FOREIGN KEY (event_id) REFERENCES events(id)
+
+=== 5XX_COUNTER_BASELINE ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319119.908,"761"]}]}}
+BASELINE_VALUE=761
+
+=== MIGRATION 1 UTC ===
+2026-10-18 10:25:45 UTC
+=== 5XX_COUNTER_AFTER_MIGRATION_1 ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319144.995,"828"]}]}}
+VALUE=828
+=== SCHEMA_AFTER_MIGRATION_1 ===
+                                        Table "public.events"
+    Column     |           Type           | Collation | Nullable |              Default               
+---------------+--------------------------+-----------+----------+------------------------------------
+ id            | integer                  |           | not null | nextval('events_id_seq'::regclass)
+ name          | text                     |           | not null | 
+ venue         | text                     |           | not null | 
+ total_tickets | integer                  |           | not null | 
+ price_cents   | integer                  |           | not null | 
+ email         | character varying(255)   |           |          | 
+ event_date    | timestamp with time zone |           | not null | 
+ scheduled_at  | timestamp with time zone |           |          | 
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+    "idx_events_event_date" btree (event_date)
+Referenced by:
+    TABLE "orders" CONSTRAINT "orders_event_id_fkey" FOREIGN KEY (event_id) REFERENCES events(id)
+

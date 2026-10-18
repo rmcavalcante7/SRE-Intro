@@ -1,0 +1,36 @@
+=== UTC ===
+2026-10-14 21:50:38 UTC
+=== DEPLOYMENTS AND ROLLOUT ===
+NAME            READY   UP-TO-DATE   AVAILABLE   AGE
+events          2/2     2            2           19d
+payments        2/2     2            2           19d
+notifications   2/2     2            2           124m
+mixedload       2/2     2            2           4m51s
+NAME      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+gateway   5         5         5            5           10d
+=== PDB ===
+NAME                MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+events-pdb          1               N/A               1                     10m
+gateway-pdb         2               N/A               3                     10m
+notifications-pdb   N/A             1                 1                     10m
+payments-pdb        1               N/A               1                     10m
+=== TOPOLOGY SPEC ===
+[
+    {
+        "labelSelector": {
+            "matchLabels": {
+                "app": "gateway"
+            }
+        },
+        "maxSkew": 1,
+        "topologyKey": "kubernetes.io/hostname",
+        "whenUnsatisfiable": "ScheduleAnyway"
+    }
+]
+=== GATEWAY PLACEMENT ===
+NAME                      READY   STATUS    RESTARTS   AGE     IP           NODE                       NOMINATED NODE   READINESS GATES
+gateway-9c86f668d-74gcx   1/1     Running   0          82s     10.42.0.81   k3d-quickticket-server-0   <none>           <none>
+gateway-9c86f668d-k6rlx   1/1     Running   0          82s     10.42.0.82   k3d-quickticket-server-0   <none>           <none>
+gateway-9c86f668d-s2mtf   1/1     Running   0          3m42s   10.42.0.80   k3d-quickticket-server-0   <none>           <none>
+gateway-9c86f668d-w9fwc   1/1     Running   0          47s     10.42.0.84   k3d-quickticket-server-0   <none>           <none>
+gateway-9c86f668d-wx8cl   1/1     Running   0          47s     10.42.0.83   k3d-quickticket-server-0   <none>           <none>

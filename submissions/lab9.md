@@ -2,7 +2,7 @@
 
 ## Setup
 
-The Lab 9 database setup started with an empty Postgres schema, so I re-seeded it with `app/seed.sql` as instructed by the lab.
+The Lab 9 database setup started with an empty Postgres schema, so it was re-seeded with `app/seed.sql` before the experiments.
 
 ```text
 Did not find any relations.
@@ -101,7 +101,7 @@ This shows that the migration did not introduce a visible additional 5xx spike i
 
 ### Backup file and pg_restore list
 
-I created the custom-format `pg_dump` backup on the host as `/tmp/quickticket.dump`, copied it into the Postgres pod as `/tmp/backup.dump`, and verified it with `file` on the host and `pg_restore --list` inside the pod.
+A custom-format `pg_dump` backup was created on the host as `/tmp/quickticket.dump`, copied into the Postgres pod as `/tmp/backup.dump`, and verified with `file` on the host and `pg_restore --list` inside the pod.
 
 ```text
 -rw-rw-r-- 1 lima lima 7.2K Oct 10 08:08 /tmp/quickticket.dump
@@ -201,7 +201,7 @@ After restoring from `/tmp/backup.dump`, both tables were back and the API retur
 
 With a single `pg_dump`, the RPO is the time between the backup and the disaster. Any orders written after the dump but before the failure would be outside the backup and could be lost during restore.
 
-In this Task 1 restore, the backup contained 50 orders and the restored database also contained 50 orders, so the observed row gap for this specific restore was 0 orders. To improve the RPO, I would automate frequent backups and, for a production system, use persistent storage plus point-in-time recovery with WAL archiving.
+In this Task 1 restore, the backup contained 50 orders and the restored database also contained 50 orders, so the observed row gap for this specific restore was 0 orders. To improve the RPO, the next step would be automated frequent backups and, for a production system, persistent storage plus point-in-time recovery with WAL archiving.
 
 ## Task 2 — Disaster Recovery Under Load
 
@@ -221,7 +221,7 @@ Backup time      08:08:25
 healthy at 08:18:17
 ```
 
-I then force-deleted the Postgres pod and waited for Kubernetes to create a replacement pod.
+The Postgres pod was force-deleted, and Kubernetes created a replacement pod.
 
 ```text
 --- DELETE POSTGRES POD ---
@@ -239,7 +239,7 @@ The new Postgres pod was empty.
 Did not find any relations.
 ```
 
-I restored the `/tmp/quickticket.dump` backup into the new pod, restarted the `events` deployment to reconnect its database pool, and verified the recovered counts.
+The `/tmp/quickticket.dump` backup was restored into the new pod, the `events` deployment was restarted to reconnect its database pool, and the recovered counts were verified.
 
 ```text
 --- RESTORE FROM BACKUP ---
@@ -300,7 +300,7 @@ To eliminate this failure mode, Postgres needs persistent storage mounted at its
 
 ### Postgres PVC change
 
-I added persistent storage to Postgres by mounting a `postgres-data` PersistentVolumeClaim at `/var/lib/postgresql/data` and setting `PGDATA` to a subdirectory inside the mounted volume.
+Persistent storage was added to Postgres by mounting a `postgres-data` PersistentVolumeClaim at `/var/lib/postgresql/data` and setting `PGDATA` to a subdirectory inside the mounted volume.
 
 ```diff
 diff --git a/k8s/postgres.yaml b/k8s/postgres.yaml
@@ -348,7 +348,7 @@ NAME            STATUS   VOLUME                                     CAPACITY   A
 postgres-data   Bound    pvc-bd95b97e-f38f-4339-a8d0-dba3756063ba   1Gi        RWO            local-path     <unset>                 14s
 ```
 
-The new persistent volume was empty, so I re-seeded it once.
+The new persistent volume was empty, so it was re-seeded once.
 
 ```text
 POD=postgres-68466c5ccd-7nssb
@@ -369,7 +369,7 @@ INSERT 0 5
 
 ### RTO re-measurement with PVC
 
-I repeated the Postgres pod deletion after adding the PVC. This time the replacement pod found the existing tables and did not need `pg_restore`.
+The Postgres pod deletion was repeated after adding the PVC. This time the replacement pod found the existing tables and did not need `pg_restore`.
 
 ```text
 --- PVC BEFORE DISASTER ---

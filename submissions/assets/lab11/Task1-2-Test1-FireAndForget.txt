@@ -1,0 +1,1 @@
+result: ok=30 fail=0

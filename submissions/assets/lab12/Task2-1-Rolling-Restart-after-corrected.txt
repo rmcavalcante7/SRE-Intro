@@ -1,0 +1,20 @@
+=== UTC AFTER ROLLING RESTART === 2026-10-15 12:45:43 UTC
+=== OFFICIAL 5XX AFTER (3m) ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068344.092,"0"]}]}}
+=== NON-HEALTH 5XX AFTER (3m) ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068344.914,"0"]}]}}
+=== ROLLOUT STATUS ===
+Name:            gateway
+Namespace:       default
+Status:          ✔ Healthy
+Strategy:        Canary
+  Step:          6/6
+  SetWeight:     100
+  ActualWeight:  100
+Images:          ghcr.io/rmcavalcante7/quickticket-gateway:1e3fd11d3955a10073fe3e385b6622172e51c5e5 (stable)
+Replicas:
+  Desired:       5
+  Current:       5
+  Updated:       5
+  Ready:         5
+  Available:     5
