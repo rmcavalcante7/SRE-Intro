@@ -1,0 +1,19 @@
+2026-10-14 22:16:54 UTC
+EVENTS_COLUMNS
+  column_name  |        data_type         | is_nullable 
+---------------+--------------------------+-------------
+ id            | integer                  | NO
+ name          | text                     | NO
+ venue         | text                     | NO
+ event_date    | timestamp with time zone | NO
+ total_tickets | integer                  | NO
+ price_cents   | integer                  | NO
+ email         | character varying        | YES
+(7 rows)
+
+INDEX_DEFINITION
+       indexname       |                                   indexdef                                   
+-----------------------+------------------------------------------------------------------------------
+ idx_events_event_date | CREATE INDEX idx_events_event_date ON public.events USING btree (event_date)
+(1 row)
+

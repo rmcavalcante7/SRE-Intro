@@ -1,0 +1,95 @@
+=== VALID BONUS BASELINE UTC ===
+2026-10-18 10:38:35 UTC
+=== MIXEDLOAD ===
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES                   SELECTOR
+mixedload   2/2     2            2           3d12h   curl         curlimages/curl:latest   app=mixedload
+=== EVENTS_STRATEGY ===
+{"maxSurge":1,"maxUnavailable":0}
+=== SCHEMA BEFORE MIGRATION 1 ===
+                                        Table "public.events"
+    Column     |           Type           | Collation | Nullable |              Default               
+---------------+--------------------------+-----------+----------+------------------------------------
+ id            | integer                  |           | not null | nextval('events_id_seq'::regclass)
+ name          | text                     |           | not null | 
+ venue         | text                     |           | not null | 
+ total_tickets | integer                  |           | not null | 
+ price_cents   | integer                  |           | not null | 
+ email         | character varying(255)   |           |          | 
+ event_date    | timestamp with time zone |           | not null | 
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "orders" CONSTRAINT "orders_event_id_fkey" FOREIGN KEY (event_id) REFERENCES events(id)
+
+=== 5XX_COUNTER_BASELINE ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319914.907,"1455"]}]}}
+BASELINE_VALUE=1455
+
+=== MIGRATION 1 UTC ===
+2026-10-18 10:39:00 UTC
+=== 5XX_COUNTER_AFTER_MIGRATION_1 ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792319939.171,"1455"]}]}}
+VALUE=1455
+=== SCHEMA_AFTER_MIGRATION_1 ===
+                                        Table "public.events"
+    Column     |           Type           | Collation | Nullable |              Default               
+---------------+--------------------------+-----------+----------+------------------------------------
+ id            | integer                  |           | not null | nextval('events_id_seq'::regclass)
+ name          | text                     |           | not null | 
+ venue         | text                     |           | not null | 
+ total_tickets | integer                  |           | not null | 
+ price_cents   | integer                  |           | not null | 
+ email         | character varying(255)   |           |          | 
+ event_date    | timestamp with time zone |           | not null | 
+ scheduled_at  | timestamp with time zone |           |          | 
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+    "idx_events_event_date" btree (event_date)
+Referenced by:
+    TABLE "orders" CONSTRAINT "orders_event_id_fkey" FOREIGN KEY (event_id) REFERENCES events(id)
+
+
+=== DEPLOY A UTC ===
+2026-10-18 10:40:13 UTC
+IMAGE=quickticket-events:a
+READ_MODE=COALESCE(scheduled_at,event_date)
+=== 5XX_COUNTER_AFTER_DEPLOY_A ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792320013.021,"1456"]}]}}
+VALUE=1456
+
+=== MIGRATION 2 UTC ===
+2026-10-18 10:41:32 UTC
+=== 5XX_COUNTER_AFTER_MIGRATION_2 ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792320090.176,"1456"]}]}}
+VALUE=1456
+ROW_PARITY=5/5
+
+=== DEPLOY B UTC ===
+2026-10-18 10:42:33 UTC
+IMAGE=quickticket-events:v2
+READ_MODE=scheduled_at
+=== 5XX_COUNTER_AFTER_DEPLOY_B ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792320153.140,"1457"]}]}}
+VALUE=1457
+
+=== MIGRATION 3 UTC ===
+2026-10-18 10:43:03 UTC
+=== 5XX_COUNTER_FINAL ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792320181.342,"1457"]}]}}
+FINAL_VALUE=1457
+=== SCHEMA_AFTER_MIGRATION_3 ===
+                                        Table "public.events"
+    Column     |           Type           | Collation | Nullable |              Default               
+---------------+--------------------------+-----------+----------+------------------------------------
+ id            | integer                  |           | not null | nextval('events_id_seq'::regclass)
+ name          | text                     |           | not null | 
+ venue         | text                     |           | not null | 
+ total_tickets | integer                  |           | not null | 
+ price_cents   | integer                  |           | not null | 
+ email         | character varying(255)   |           |          | 
+ scheduled_at  | timestamp with time zone |           | not null | 
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "orders" CONSTRAINT "orders_event_id_fkey" FOREIGN KEY (event_id) REFERENCES events(id)
+

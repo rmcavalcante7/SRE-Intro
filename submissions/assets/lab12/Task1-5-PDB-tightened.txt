@@ -1,0 +1,2 @@
+NAME         MIN AVAILABLE   MAX UNAVAILABLE   ALLOWED DISRUPTIONS   AGE
+events-pdb   2               N/A               0                     19m

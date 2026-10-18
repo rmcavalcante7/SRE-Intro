@@ -1,0 +1,13 @@
+=== SCOPE ===
+Follow-up post-migration verification; this file supplements the original
+before/after migration timestamps and does not replace them.
+=== UTC ===
+2026-10-16 07:38:33 UTC
+=== MIXEDLOAD ===
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                   SELECTOR
+mixedload   2/2     2            2           33h   curl         curlimages/curl:latest   app=mixedload
+NAME                        READY   STATUS    RESTARTS   AGE   IP            NODE                       NOMINATED NODE   READINESS GATES
+mixedload-96c9f49fd-jw58g   1/1     Running   0          16s   10.42.0.150   k3d-quickticket-server-0   <none>           <none>
+mixedload-96c9f49fd-lppdj   1/1     Running   0          16s   10.42.0.149   k3d-quickticket-server-0   <none>           <none>
+=== GLOBAL_5XX_1M_EXPLICIT_ZERO ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792136316.235,"0"]}]}}

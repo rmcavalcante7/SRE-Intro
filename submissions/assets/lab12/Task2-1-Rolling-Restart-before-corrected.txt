@@ -1,0 +1,5 @@
+=== UTC BEFORE ROLLING RESTART === 2026-10-15 12:43:50 UTC
+=== OFFICIAL 5XX BEFORE (1m) ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068230.951,"0"]}]}}
+=== NON-HEALTH 5XX BEFORE (1m) ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068232.395,"0"]}]}}

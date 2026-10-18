@@ -1,0 +1,12 @@
+=== VALID BONUS RUN 3 ===
+BASELINE_FILE=/tmp/5xx.baseline
+BASELINE_VALUE=1455
+FINAL_FILE=/tmp/5xx.final
+FINAL_VALUE=1457
+=== DIFF /tmp/5xx.baseline /tmp/5xx.final ===
+--- /tmp/5xx.baseline
++++ /tmp/5xx.final
+@@ -1 +1 @@
+-1455
++1457
+RESULT=FAILED_ZERO_DELTA

@@ -1,0 +1,4 @@
+5XX_BASELINE_AND_FINAL
+5XX_BASELINE_3M
+5XX_FINAL_3M
+NOTE: values are sliding 3-minute increase queries captured at each transition; no cumulative counter diff was captured before the first transition.

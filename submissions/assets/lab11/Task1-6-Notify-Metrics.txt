@@ -1,0 +1,2 @@
+notifications_notify_total{result="success"} 22.0
+notifications_notify_total{result="failed"} 8.0

@@ -1,0 +1,2 @@
+max_over_time(gateway_bulkhead_in_flight{target="payments"}[2m]) = 10
+gateway_bulkhead_rejections_total{target="payments"} = 10

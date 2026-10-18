@@ -70,6 +70,19 @@ spec:
         version: "v2"
 
     spec:
+      # Allow the Gateway time to drain traffic during a rolling restart.
+      terminationGracePeriodSeconds: 40
+
+      # Prefer an even distribution across node hostnames when multiple nodes
+      # are available. ScheduleAnyway keeps the single-node k3d lab usable.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: gateway
+
       # imagePullSecrets tells Kubernetes which registry credentials to use
       # when it pulls private images from GitHub Container Registry.
       imagePullSecrets:
@@ -84,9 +97,9 @@ spec:
           # container traceable to the exact source revision.
           image: ghcr.io/rmcavalcante7/quickticket-gateway:bfdd6b5c381bf09595301f1ef0d474e1722e3a42
 
-          # Always makes Kubernetes pull the image from the registry whenever
-          # a new Pod is created, which matches the GHCR workflow.
-          imagePullPolicy: Always
+          # IfNotPresent permits the locally imported image used by the k3d lab
+          # while still using the registry image when it is not cached.
+          imagePullPolicy: IfNotPresent
 
           # The Gateway FastAPI application listens on port 8080.
           ports:
@@ -106,6 +119,13 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
 
+          # Give Kubernetes time to remove this Pod from Service endpoints
+          # before the process receives SIGTERM.
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 10"]
+
           # readinessProbe tells Kubernetes whether this Pod can receive traffic.
           # It uses /health so only Gateway Pods that can answer health checks
           # are added to the Service endpoints.
@@ -114,9 +134,9 @@ spec:
               path: /health
               port: 8080
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 2
             timeoutSeconds: 3
-            failureThreshold: 2
+            failureThreshold: 1
 
           # resources declares the amount of CPU and memory requested by the Pod
           # and the maximum amount the container is allowed to use.
@@ -143,6 +163,10 @@ spec:
             - name: PAYMENTS_URL
               value: "http://payments:8082"
 
+            # NOTIFICATIONS_URL points to the best-effort notifications Service.
+            - name: NOTIFICATIONS_URL
+              value: "http://notifications:8083"
+
             # GATEWAY_TIMEOUT_MS defines the HTTP client timeout used by the gateway.
             - name: GATEWAY_TIMEOUT_MS
               value: "5000"
@@ -150,7 +174,7 @@ spec:
             # APP_VERSION identifies this Gateway template revision during the canary lab.
             # Changing this value forces Argo Rollouts to create a new ReplicaSet.
             - name: APP_VERSION
-              value: "v5-multistep"
+              value: "v6-lab12-task1"
 ---
 
 # This Service gives the Gateway Pods a stable address.

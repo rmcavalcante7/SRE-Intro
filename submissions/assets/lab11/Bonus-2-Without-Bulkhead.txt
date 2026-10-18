@@ -1,0 +1,2 @@
+WITHOUT_BULKHEAD EVENTS: ok=20 slow=0
+The comparison used the same slow-payments injection with the bulkhead limit temporarily raised to 100 and one gateway replica. No /events degradation was observed in this implementation, so this evidence does not support the enunciado's expected contrast of slow events without a bulkhead.

@@ -1,0 +1,2 @@
+sustained 200=30 429=0
+Prometheus burst rejection query after the burst: gateway_rate_limit_rejections_total was observed for the burst; the sustained sequence added no 429 responses.
