@@ -95,7 +95,7 @@ spec:
           # This image is built by GitHub Actions and pushed to ghcr.io.
           # The tag is the commit SHA from the CI run, which makes the deployed
           # container traceable to the exact source revision.
-          image: ghcr.io/rmcavalcante7/quickticket-gateway:35667d7fabee39be56808a615e2d1a41cfedbada
+          image: ghcr.io/rmcavalcante7/quickticket-gateway:7ca7565aa2498768a43aac97d936801ffd3bdf97
 
           # IfNotPresent permits the locally imported image used by the k3d lab
           # while still using the registry image when it is not cached.
