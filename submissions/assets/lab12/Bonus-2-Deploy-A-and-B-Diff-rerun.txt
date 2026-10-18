@@ -1,0 +1,26 @@
+=== DEPLOY A TO DEPLOY B CODE DIFF (temporary A vs tracked v2) ===
+--- /tmp/quickticket-events-a/main.py	2026-10-18 10:22:23.931224610 +0000
++++ /home/lima.guest/SRE-Intro/app/events/main.py	2026-10-14 22:44:44.198700193 +0000
+@@ -142,11 +142,11 @@
+         cur = conn.cursor()
+         cur.execute("""
+             SELECT e.id, e.name, e.venue,
+-                   COALESCE(e.scheduled_at, e.event_date) AS event_date,
++                   e.scheduled_at AS event_date,
+                    e.total_tickets, e.price_cents,
+                    COALESCE(SUM(o.quantity), 0) as confirmed
+             FROM events e LEFT JOIN orders o ON e.id = o.event_id
+-            GROUP BY e.id ORDER BY COALESCE(e.scheduled_at, e.event_date)
++            GROUP BY e.id ORDER BY e.scheduled_at
+         """)
+         rows = cur.fetchall()
+         cur.close()
+@@ -169,7 +169,7 @@
+         cur = conn.cursor()
+         cur.execute("""
+             SELECT e.id, e.name, e.venue,
+-                   COALESCE(e.scheduled_at, e.event_date) AS event_date,
++                   e.scheduled_at AS event_date,
+                    e.total_tickets, e.price_cents,
+                    COALESCE(SUM(o.quantity), 0) as confirmed
+             FROM events e LEFT JOIN orders o ON e.id = o.event_id

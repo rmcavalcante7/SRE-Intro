@@ -1,0 +1,8 @@
+=== BONUS ZERO-DELTA COUNTER ===
+=== BASELINE FILE ===
+5xx_total=1487
+=== FINAL FILE ===
+5xx_total=1487
+=== DIFF ===
+(no output; files are identical)
+RESULT=PASS_ZERO_DELTA

@@ -1,0 +1,61 @@
+=== BONUS LIVE-LOAD TRANSITIONS ===
+All values below are the cumulative global gateway 5xx counter while mixedload remained 2/2.
+
+=== BASELINE ===
+=== BONUS BASELINE DRAINED ===
+2026-10-18T11:46:28Z
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+events   3/3     3            3           23d
+3 5 {"maxSurge":3,"maxUnavailable":0} quickticket-events:base-rerun
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE
+mixedload   2/2     2            2           3d14h
+=== 5XX COUNTER ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792323992.113,"1487"]}]}}
+=== 1M ERROR RATE ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792323992.940,"0"]}]}}
+
+=== MIGRATION 1 ===
+=== DRAINED AFTER M1 ===
+2026-10-18T11:46:49Z
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792324010.134,"1487"]}]}}
+
+=== DEPLOY A ===
+=== DRAINED DEPLOY A ===
+2026-10-18T11:47:37Z
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+events   3/3     3            3           23d
+quickticket-events:a-rerun
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792324060.404,"1487"]}]}}
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792324061.544,"0"]}]}}
+
+=== MIGRATION 2 ===
+=== DRAINED AFTER M2 ===
+2026-10-18T11:47:59Z
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792324085.867,"1487"]}]}}
+5 rows, null scheduled_at=0
+d4e5f6a7b8c9
+
+=== DEPLOY B ===
+=== DRAINED DEPLOY B ===
+2026-10-18T11:49:15Z
+NAME     READY   UP-TO-DATE   AVAILABLE   AGE
+events   3/3     3            3           23d
+quickticket-events:v2
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792324158.266,"1487"]}]}}
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792324159.328,"0"]}]}}
+
+=== MIGRATION 3 / FINAL ===
+=== DRAINED AFTER M3 ===
+2026-10-18T11:49:45Z
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792324186.078,"1487"]}]}}
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792324187.281,"0"]}]}}
+=== SCHEMA FINAL ===
+id integer nullable=NO
+name text nullable=NO
+venue text nullable=NO
+total_tickets integer nullable=NO
+price_cents integer nullable=NO
+email character varying nullable=YES
+scheduled_at timestamp with time zone nullable=NO
+5 rows, null scheduled_at=0
+e5f6a7b8c9d0

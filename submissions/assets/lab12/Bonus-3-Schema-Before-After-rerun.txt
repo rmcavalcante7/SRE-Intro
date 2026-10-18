@@ -1,0 +1,9 @@
+=== BEFORE MIGRATION 1 ===
+columns: event_date TIMESTAMPTZ NOT NULL; scheduled_at absent
+index: idx_events_event_date present
+rows: 5
+
+=== AFTER MIGRATION 3 ===
+columns: scheduled_at TIMESTAMPTZ NOT NULL; event_date absent
+rows: 5; null scheduled_at=0
+alembic_version: e5f6a7b8c9d0

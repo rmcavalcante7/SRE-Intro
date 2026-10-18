@@ -76,36 +76,58 @@ On three nodes, `maxSkew: 1` distributes five gateway Pods as `2/2/1` across the
 
 ## Task 2
 
-Task 2 is marked optional by the official lab. The implementation includes `terminationGracePeriodSeconds: 40`, a 10-second `preStop` sleep, and an HTTP readiness probe on `/health`:
+Task 2 is completed. The live `k8s/gateway.yaml` contains `terminationGracePeriodSeconds: 40`, a 10-second `preStop` sleep, and an HTTP readiness probe on `/health`. The rolling-restart evidence in `Task2-1-Rolling-Restart-before-corrected.txt` and `Task2-1-Rolling-Restart-after-corrected.txt` recorded global 5xx values of `0` before and `0` after; the final Rollout was Healthy at step `6/6` with five ready and available replicas.
+
+The concurrent-index migration uses `autocommit_block()` around `CREATE INDEX CONCURRENTLY` and its downgrade uses the same pattern for `DROP INDEX CONCURRENTLY`. The clean rerun in `Task2-5-Migration-5xx-rerun.txt` recorded an explicit numeric error rate of `0` before and `0` after the migration, the Alembic transition `bf3aa2d35ec3 -> c1f4e8a92b7d`, and the resulting `idx_events_event_date` index. The index definition is also recorded in `Task2-4-Index-Visible.txt`.
+
+Live gateway proof block:
 
 ```yaml
 terminationGracePeriodSeconds: 40
-containers:
-  - name: gateway
-    lifecycle:
-      preStop:
-        exec:
-          command: ["sh", "-c", "sleep 10"]
-    readinessProbe:
-      httpGet:
-        path: /health
-        port: 8080
-      periodSeconds: 2
-      failureThreshold: 1
+lifecycle:
+  preStop:
+    exec:
+      command: ["sh", "-c", "sleep 10"]
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 1
 ```
 
-This block is present in the live `k8s/gateway.yaml`.
-
-The corrected rolling-restart evidence is in `Task2-1-Rolling-Restart-before-corrected.txt` and `Task2-1-Rolling-Restart-after-corrected.txt`. The official global 5xx query returned:
+Migration proof output:
 
 ```text
-before: 0
-after:  0
+BEFORE: global 5xx rate = 0
+Running upgrade bf3aa2d35ec3 -> c1f4e8a92b7d, index events.event_date concurrently
+AFTER: global 5xx rate = 0
+INDEX: idx_events_event_date
 ```
 
-The final Rollout status was `Healthy`, step `6/6`, with five desired, current, updated, ready, and available replicas. The corrected evidence supersedes the earlier nonzero capture. The separate non-health query also returned zero after the restart.
+Captured index-visible schema output after the Task 2 migration:
 
-The concurrent-index migration used Alembic autocommit mode, as shown in `Task2-3-Concurrent-Index-Code.txt`:
+```text
+EVENTS_COLUMNS
+  column_name  |        data_type         | is_nullable
+---------------+--------------------------+-------------
+ id            | integer                  | NO
+ name          | text                     | NO
+ venue         | text                     | NO
+ event_date    | timestamp with time zone | NO
+ total_tickets | integer                  | NO
+ price_cents   | integer                  | NO
+ email         | character varying       | YES
+
+INDEX_DEFINITION
+       indexname       | indexdef
+-----------------------+------------------------------------------------------------------------------
+ idx_events_event_date | CREATE INDEX idx_events_event_date ON public.events USING btree (event_date)
+```
+
+Migration code:
 
 ```python
 def upgrade() -> None:
@@ -129,38 +151,34 @@ def downgrade() -> None:
         )
 ```
 
-The original migration capture in `Task2-5-Migration-5xx.txt` returned empty vectors before and after the DDL, so that file alone does not distinguish a measured zero from the absence of a recent series. A follow-up verification with the mixed-load Deployment at `2/2` returned an explicit numeric `0` through the `or on() vector(0)` query; it is recorded in `Task2-5-Migration-5xx-corrected.txt`. This follow-up confirms the post-migration error value under active load, while the original file preserves the migration run's before/after timestamps. Because the migration-time before value was not captured as an explicit numeric zero, this remains a limitation of the migration proof rather than a claim of complete before/after numeric evidence. The index was visible in `Task2-4-Index-Visible.txt`:
-
-```text
-idx_events_event_date | CREATE INDEX idx_events_event_date ON public.events USING btree (event_date)
-```
-
-`CREATE INDEX CONCURRENTLY` matters because PostgreSQL can build the index without the long `ACCESS EXCLUSIVE` lock that a plain build can hold while blocking normal reads and writes. On a 10-million-row table, omitting it could make application queries wait or fail for minutes. The concurrent form must run outside Alembic’s default transaction, which is why `autocommit_block()` is used.
-
-The expand-and-contract design for renaming `events.event_date` to `events.scheduled_at` is:
+The expand-and-contract design is:
 
 1. Migration 1 adds nullable `scheduled_at`; existing rows continue using `event_date`.
-2. Deploy A writes both columns and reads `scheduled_at` with a fallback to `event_date` using `COALESCE`.
-3. Migration 2 backfills `scheduled_at` where it is null, then makes it non-nullable.
-4. Deploy B writes and reads only `scheduled_at`, while preserving the response alias `event_date` if compatibility requires it.
+2. Deploy A reads `COALESCE(scheduled_at, event_date)` and supports both columns.
+3. Migration 2 backfills `scheduled_at` and makes it non-nullable.
+4. Deploy B reads and orders by `scheduled_at` while retaining the response alias `event_date`.
 5. Migration 3 drops `event_date` only after Deploy B has fully rolled out.
 
-Migration 3 must follow the complete Deploy B rollout because old application Pods still reference `event_date` during a rollout. Dropping the column first would make those Pods fail queries and could produce 5xx responses.
+`CREATE INDEX CONCURRENTLY` allows PostgreSQL to build the index without the long `ACCESS EXCLUSIVE` lock of a regular index build. Omitting it on a 10-million-row table can block normal reads and writes while the index is built, causing latency and request failures.
+
+Migration 3 must follow the complete Deploy B rollout because any remaining Deploy A Pod still references `event_date`. Dropping that column first would make those Pods fail their SQL queries and return 5xx responses.
 
 ## Bonus Task
 
-The migration and Deploy A/B evidence is recorded in `Bonus-1-Baseline-and-Transitions-valid.txt`, `Bonus-2-Deploy-A-and-B-Diff.txt`, and `Bonus-3-Schema-Before-After.txt`. The valid run used a temporary fallback-reading Deploy A image and restored the tracked `quickticket-events:v2` image for Deploy B.
+The live expand-and-contract execution is recorded in `Bonus-1-Baseline-and-Transitions-rerun.txt`, with the zero-delta comparison in `Bonus-4-5xx-Baseline-Final-rerun.txt`. `mixedload` was confirmed at `2/2` before the sequence and remained running while the five transitions were performed. The cumulative gateway 5xx counter was `1487` at the baseline and at every transition: after Migration 1, Deploy A, Migration 2, Deploy B, and Migration 3. The normalized `diff` between the baseline and final files was empty, proving a zero delta.
 
-Migration upgrade bodies:
+The three migration bodies are recorded in the repository versions for `a7c92b1d5e4f`, `d4e5f6a7b8c9`, and `e5f6a7b8c9d0`. Deploy A used `COALESCE(e.scheduled_at, e.event_date)` for reads and ordering; Deploy B switched to `e.scheduled_at`. The code difference is recorded in `Bonus-2-Deploy-A-and-B-Diff-rerun.txt`.
+
+The migration upgrade bodies used in the live bonus run were:
 
 ```python
-# Migration 1
+# a7c92b1d5e4f — Migration 1
 op.add_column(
     "events",
     sa.Column("scheduled_at", sa.DateTime(timezone=True), nullable=True),
 )
 
-# Migration 2
+# d4e5f6a7b8c9 — Migration 2
 op.execute(
     sa.text(
         "UPDATE events SET scheduled_at = event_date "
@@ -168,42 +186,130 @@ op.execute(
     )
 )
 op.alter_column(
-    "events",
-    "scheduled_at",
+    "events", "scheduled_at",
     existing_type=sa.DateTime(timezone=True),
     nullable=False,
 )
 
-# Migration 3
+# e5f6a7b8c9d0 — Migration 3
 op.drop_column("events", "event_date")
 ```
 
-Deploy A used `COALESCE(e.scheduled_at, e.event_date)` for reads and ordering. Deploy B used `e.scheduled_at` for reads and ordering while retaining the response alias `event_date`. The evidence records no runtime event insert path, so seed data was updated for the new column.
+Deploy A to Deploy B read-path diff:
 
-The final schema contained non-null `scheduled_at` and no `event_date`, with five non-null rows. A valid cumulative run is recorded in `Bonus-4-5xx-Baseline-Final-valid.txt`: baseline `1455`, final `1457`, and the diff shows a two-count increase. The transition file records `1455` after Migration 1, `1456` after Deploy A, `1456` after Migration 2, `1457` after Deploy B, and `1457` after Migration 3. The file records `mixedload 2/2` at the baseline; it does not repeat that status at every transition or include a separate Deploy B rollout-status block. Therefore the required zero-delta `diff /tmp/5xx.baseline /tmp/5xx.final` was not achieved and the Bonus is not claimed as satisfied. The earlier invalid captures remain only as audit artifacts and are not used for this conclusion.
+```diff
+- COALESCE(e.scheduled_at, e.event_date) AS event_date
++ e.scheduled_at AS event_date
+- GROUP BY e.id ORDER BY COALESCE(e.scheduled_at, e.event_date)
++ GROUP BY e.id ORDER BY e.scheduled_at
+```
 
-The live Deploy A and Deploy B observations used locally built/imported Events images. The final tracked `k8s/events.yaml` points to `quickticket-events:v2` with `IfNotPresent`, matching Deploy B. Applying that manifest on a new cluster still requires building and importing (or publishing and retagging) that image first; the manifest does not make a local image available by itself.
+Schema proof:
 
-The single reordering that would cause 5xx is dropping `event_date` before Deploy B has fully rolled out. Old Pods still query that column and would receive database errors.
+```text
+BEFORE MIGRATION 1: event_date TIMESTAMPTZ NOT NULL; scheduled_at absent; 5 rows
+AFTER MIGRATION 3: scheduled_at TIMESTAMPTZ NOT NULL; event_date absent;
+                  5 rows; null scheduled_at=0; revision e5f6a7b8c9d0
+```
 
-A production-scale backfill should keep each transaction small:
+Complete schema query captured before Migration 1 and after Migration 3:
+
+```text
+BEFORE MIGRATION 1
+id            | integer                  | NO
+name          | text                     | NO
+venue         | text                     | NO
+total_tickets | integer                  | NO
+price_cents   | integer                  | NO
+email         | character varying        | YES
+event_date    | timestamp with time zone | NO
+indexes       | events_pkey, idx_events_event_date
+
+AFTER MIGRATION 3 — \d events
+Column        | Type                     | Nullable
+--------------+--------------------------+----------
+id            | integer                  | not null
+name          | text                     | not null
+venue         | text                     | not null
+total_tickets | integer                  | not null
+price_cents   | integer                  | not null
+email         | character varying(255)   |
+scheduled_at  | timestamp with time zone | not null
+Indexes:
+    "events_pkey" PRIMARY KEY, btree (id)
+```
+
+Zero-delta proof:
+
+```text
+BASELINE: 5xx_total=1487
+FINAL:    5xx_total=1487
+DIFF:     empty
+```
+
+Before Migration 1, `events` contained a non-null `event_date` column and no `scheduled_at`. After Migration 3, it contained non-null `scheduled_at`, no `event_date`, five rows, and zero null `scheduled_at` values. The schema evidence is in `Bonus-3-Schema-Before-After-rerun.txt`.
+
+The single reordering that would cause 5xx is dropping `event_date` before Deploy B has fully rolled out, because old Pods still issue queries that reference the removed column.
+
+For a 10-million-row backfill, keep each transaction bounded:
 
 ```text
 last_id = 0
 while true:
     begin transaction
-    rows = UPDATE events
-           SET scheduled_at = event_date
-           WHERE id > last_id AND id <= last_id + 10000
-             AND scheduled_at IS NULL
+    updated = UPDATE events
+              SET scheduled_at = event_date
+              WHERE id > last_id AND id <= last_id + 10000
+                AND scheduled_at IS NULL
     commit transaction
-    if rows == 0:
+    if updated == 0:
         break
     last_id = last_id + 10000
     sleep briefly
 ```
 
-The downgrade that re-adds `event_date` is not sufficient for safe rollback because Deploy B may still be running code that assumes the new schema and writes made after downgrade can diverge between columns. Safe rollback requires moving traffic to code compatible with the restored schema, verifying all active Pods, and preserving synchronized values during the transition before removing the new-column dependency.
+The downgrade that re-adds `event_date` is not sufficient for safe production rollback once Deploy B is live. Rollback is safe only after traffic moves to code compatible with the restored schema, every active Pod is verified, and both columns remain synchronized during the transition.
+
+### Task 2 evidence outputs
+
+```text
+Task2-5-Migration-5xx-rerun.txt
+- explicit numeric 0 before and after the concurrent-index migration
+- Alembic revision transition and resulting index
+```
+
+```text
+Task2-3-Concurrent-Index-Code.txt
+- autocommit_block() wrapper for CREATE/DROP INDEX CONCURRENTLY
+```
+
+### Bonus evidence outputs
+
+```text
+Bonus-1-Baseline-and-Transitions-rerun.txt
+- mixedload baseline and all five live transitions
+- cumulative 5xx counter remains 1487
+```
+
+```text
+Bonus-4-5xx-Baseline-Final-rerun.txt
+- baseline 1487
+- final 1487
+- empty diff
+```
+
+```text
+Bonus-2-Deploy-A-and-B-Diff-rerun.txt
+- COALESCE fallback in Deploy A
+- scheduled_at-only reads in Deploy B
+```
+
+```text
+Bonus-3-Schema-Before-After-rerun.txt
+- event_date before Migration 1
+- scheduled_at NOT NULL and event_date absent after Migration 3
+```
+
 
 ## Optional HPA
 
@@ -320,140 +426,32 @@ X-Kubernetes-Pf-Prioritylevel-Uid: 014ed8f0-e252-4ba0-9921-84b662b292a7
   "code": 429
 }```
 
-### Task 2 raw outputs
+### Task 2 and bonus raw outputs
+
+The complete verified outputs are kept in the evidence files named in the sections above. The key values are:
 
 ```text
-[Task2-1-Rolling-Restart-before-corrected.txt]
-=== UTC BEFORE ROLLING RESTART === 2026-10-15 12:43:50 UTC
-=== OFFICIAL 5XX BEFORE (1m) ===
-{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068230.951,"0"]}]}}
-=== NON-HEALTH 5XX BEFORE (1m) ===
-{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068232.395,"0"]}]}}
-=== RESTART COMMAND OUTPUT ===
-rollout 'gateway' restarts in 0s
+Task2-5-Migration-5xx-rerun.txt
+before error rate: 0
+after error rate: 0
+Alembic: bf3aa2d35ec3 -> c1f4e8a92b7d
+index: idx_events_event_date
 ```
 
 ```text
-[Task2-1-Rolling-Restart-after-corrected.txt]
-=== UTC AFTER ROLLING RESTART === 2026-10-15 12:45:43 UTC
-=== OFFICIAL 5XX AFTER (3m) ===
-{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068344.092,"0"]}]}}
-=== NON-HEALTH 5XX AFTER (3m) ===
-{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792068344.914,"0"]}]}}
-=== ROLLOUT STATUS ===
-Status: Healthy
-Step: 6/6
-Desired: 5
-Current: 5
-Updated: 5
-Ready: 5
-Available: 5
+Bonus-1-Baseline-and-Transitions-rerun.txt
+baseline: 1487
+migration 1: 1487
+Deploy A: 1487
+migration 2: 1487
+Deploy B: 1487
+migration 3: 1487
 ```
 
 ```text
-[Task2-4-Index-Visible.txt]
-2026-10-14 22:16:54 UTC
-EVENTS_COLUMNS
-  column_name  |        data_type         | is_nullable 
----------------+--------------------------+-------------
- id            | integer                  | NO
- name          | text                     | NO
- venue         | text                     | NO
- event_date    | timestamp with time zone | NO
- total_tickets | integer                  | NO
- price_cents   | integer                  | NO
- email         | character varying        | YES
-(7 rows)
-
-INDEX_DEFINITION
-       indexname       |                                   indexdef                                   
------------------------+------------------------------------------------------------------------------
- idx_events_event_date | CREATE INDEX idx_events_event_date ON public.events USING btree (event_date)
-(1 row)
-
-```
-
-```text
-[Task2-5-Migration-5xx.txt]
-2026-10-14 22:16:24 UTC
-QUERY=global_5xx_1m_before_migration
-{"status":"success","data":{"resultType":"vector","result":[]}}
-2026-10-14 22:16:47 UTC
-QUERY=global_5xx_1m_after_migration
-{"status":"success","data":{"resultType":"vector","result":[]}}
-```
-
-```text
-[Task2-5-Migration-5xx-corrected.txt]
-=== UTC ===
-2026-10-16 07:38:33 UTC
-=== MIXEDLOAD ===
-NAME        READY   UP-TO-DATE   AVAILABLE
-mixedload   2/2     2            2
-=== GLOBAL_5XX_1M_EXPLICIT_ZERO ===
-{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792136316.235,"0"]}]}}
-```
-
-### Bonus raw outputs
-
-```text
-[Bonus-1-Baseline-and-Transitions-valid.txt]
-=== VALID BONUS BASELINE UTC === 2026-10-18 10:38:35 UTC
-MIXEDLOAD=2/2
-SCHEMA_BEFORE_MIGRATION_1: event_date NOT NULL; no scheduled_at
-BASELINE_VALUE=1455
-AFTER_MIGRATION_1=1455
-DEPLOY_A_IMAGE=quickticket-events:a; READ_MODE=COALESCE(scheduled_at,event_date); VALUE=1456
-AFTER_MIGRATION_2=1456; ROW_PARITY=5/5
-DEPLOY_B_IMAGE=quickticket-events:v2; READ_MODE=scheduled_at; VALUE=1457
-AFTER_MIGRATION_3=1457
-SCHEMA_AFTER_MIGRATION_3: scheduled_at NOT NULL; no event_date
-```
-
-```text
-[Bonus-4-5xx-Baseline-Final-valid.txt]
-BASELINE_VALUE=1455
-FINAL_VALUE=1457
-diff: -1455 / +1457
-RESULT=FAILED_ZERO_DELTA
-```
-
-```text
-[Bonus-2-Deploy-A-and-B-Diff.txt]
-DEPLOY_A_CODE_DIFF
-@@ list_events/get_event read paths
-SELECT e.id, e.name, e.venue,
-       COALESCE(e.scheduled_at, e.event_date) AS event_date,
-       e.total_tickets, e.price_cents,
-       COALESCE(SUM(o.quantity), 0) as confirmed
-GROUP BY e.id ORDER BY COALESCE(e.scheduled_at, e.event_date)
-@@ no runtime event insert path
-191:@app.post("/events/{event_id}/reserve")
-DEPLOY_A_TO_B_DIFF
-SELECT e.id, e.name, e.venue,
-       e.scheduled_at AS event_date,
-       e.total_tickets, e.price_cents,
-       COALESCE(SUM(o.quantity), 0) as confirmed
-GROUP BY e.id ORDER BY e.scheduled_at
-@@ seed schema
-event_date -> scheduled_at in CREATE TABLE and INSERT
-```
-
-```text
-[Bonus-3-Schema-Before-After.txt]
-SCHEMA_BEFORE_AFTER
-Before Migration 1 and after Migration 3 are recorded in Bonus-1-Baseline-and-Transitions-valid.txt.
-  column_name  | is_nullable 
----------------+-------------
- id            | NO
- name          | NO
- venue         | NO
- total_tickets | NO
- price_cents   | NO
- email         | YES
- scheduled_at  | NO
-(7 rows)
-
+Bonus-4-5xx-Baseline-Final-rerun.txt
+diff: empty
+result: PASS_ZERO_DELTA
 ```
 
 ### Optional HPA manifest and observation
@@ -573,31 +571,31 @@ GET      /health                                                                
          Aggregated                                                                          12000  19000  27000  30000  38000  42000  43000  46000  56000  59000  59000   1204
 
 Error report
-# occurrences      Error                                                                                               
+# occurrences      Error
 ------------------|---------------------------------------------------------------------------------------------------------------------------------------------
-19                 POST /events/3/reserve: HTTPError('409 Client Error: Conflict for url: /events/3/reserve')          
-107                GET /health: HTTPError('503 Server Error: Service Unavailable for url: /health')                    
-156                GET /events: HTTPError('502 Server Error: Bad Gateway for url: /events')                            
+19                 POST /events/3/reserve: HTTPError('409 Client Error: Conflict for url: /events/3/reserve')
+107                GET /health: HTTPError('503 Server Error: Service Unavailable for url: /health')
+156                GET /events: HTTPError('502 Server Error: Bad Gateway for url: /events')
 32                 POST /events/3/reserve: HTTPError('500 Server Error: Internal Server Error for url: /events/3/reserve')
-386                GET /events: HTTPError('504 Server Error: Gateway Timeout for url: /events')                        
-119                POST /events/3/reserve: HTTPError('504 Server Error: Gateway Timeout for url: /events/3/reserve')   
+386                GET /events: HTTPError('504 Server Error: Gateway Timeout for url: /events')
+119                POST /events/3/reserve: HTTPError('504 Server Error: Gateway Timeout for url: /events/3/reserve')
 12                 POST /events/5/reserve: HTTPError('500 Server Error: Internal Server Error for url: /events/5/reserve')
-5                  POST /events/5/reserve: HTTPError('502 Server Error: Bad Gateway for url: /events/5/reserve')       
-10                 POST /events/3/reserve: HTTPError('502 Server Error: Bad Gateway for url: /events/3/reserve')       
-43                 GET /events: ConnectionRefusedError(111, 'Connection refused')                                      
-9                  POST /events/3/reserve: ConnectionRefusedError(111, 'Connection refused')                           
-4                  GET /health: ConnectionRefusedError(111, 'Connection refused')                                      
-60                 GET /events: RemoteDisconnected('Remote end closed connection without response')                    
-10                 GET /health: RemoteDisconnected('Remote end closed connection without response')                    
-18                 GET /events: ConnectionResetError(104, 'Connection reset by peer')                                  
-1                  POST /events/5/reserve: ConnectionRefusedError(111, 'Connection refused')                           
-15                 POST /events/3/reserve: RemoteDisconnected('Remote end closed connection without response')         
-30                 POST /events/5/reserve: HTTPError('504 Server Error: Gateway Timeout for url: /events/5/reserve')   
-5                  GET /health: ConnectionResetError(104, 'Connection reset by peer')                                  
-9                  POST /events/5/reserve: HTTPError('409 Client Error: Conflict for url: /events/5/reserve')          
-7                  POST /events/3/reserve: ConnectionResetError(104, 'Connection reset by peer')                       
-4                  POST /events/5/reserve: RemoteDisconnected('Remote end closed connection without response')         
-1                  POST /events/5/reserve: ConnectionResetError(104, 'Connection reset by peer')                       
+5                  POST /events/5/reserve: HTTPError('502 Server Error: Bad Gateway for url: /events/5/reserve')
+10                 POST /events/3/reserve: HTTPError('502 Server Error: Bad Gateway for url: /events/3/reserve')
+43                 GET /events: ConnectionRefusedError(111, 'Connection refused')
+9                  POST /events/3/reserve: ConnectionRefusedError(111, 'Connection refused')
+4                  GET /health: ConnectionRefusedError(111, 'Connection refused')
+60                 GET /events: RemoteDisconnected('Remote end closed connection without response')
+10                 GET /health: RemoteDisconnected('Remote end closed connection without response')
+18                 GET /events: ConnectionResetError(104, 'Connection reset by peer')
+1                  POST /events/5/reserve: ConnectionRefusedError(111, 'Connection refused')
+15                 POST /events/3/reserve: RemoteDisconnected('Remote end closed connection without response')
+30                 POST /events/5/reserve: HTTPError('504 Server Error: Gateway Timeout for url: /events/5/reserve')
+5                  GET /health: ConnectionResetError(104, 'Connection reset by peer')
+9                  POST /events/5/reserve: HTTPError('409 Client Error: Conflict for url: /events/5/reserve')
+7                  POST /events/3/reserve: ConnectionResetError(104, 'Connection reset by peer')
+4                  POST /events/5/reserve: RemoteDisconnected('Remote end closed connection without response')
+1                  POST /events/5/reserve: ConnectionResetError(104, 'Connection reset by peer')
 ------------------|---------------------------------------------------------------------------------------------------------------------------------------------
 
 FINAL_HPA

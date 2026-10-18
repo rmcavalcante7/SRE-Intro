@@ -1,0 +1,16 @@
+=== CLEAN TASK 2 MIGRATION EVIDENCE ===
+The query is the official global 5xx rate over the active one-minute window.
+
+=== BEFORE ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792323009.509,"0"]}]}}
+=== ALEMBIC MIGRATION OUTPUT ===
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade bf3aa2d35ec3 -> c1f4e8a92b7d, index events.event_date concurrently
+
+=== AFTER ===
+{"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1792323104.678,"0"]}]}}
+=== INDEX AND REVISION AFTER ===
+events_pkey
+idx_events_event_date
+c1f4e8a92b7d
